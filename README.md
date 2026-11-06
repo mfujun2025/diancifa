@@ -21,7 +21,7 @@
 | 域名出售 | `domains.html` | 两个域名的优势、价格说明、购买流程、联系方式、FAQ |
 | 404 | `404.html` | 错误页 |
 
-附属文件：`sitemap.xml`、`robots.txt`、`.nojekyll`、`assets/data/products.json`（产品数据源）。
+附属文件：`sitemap.xml`、`robots.txt`、`.nojekyll`、`BingSiteAuth.xml`（Bing 站点所有权验证文件）、`assets/data/products.json`（产品数据源）。
 
 ## 目录结构
 
@@ -81,6 +81,11 @@ python tools/build.py
 - 项目预览地址：`https://mfujun2025.github.io/diancifa/`，会跳转到主域名
 
 仓库根目录 `CNAME` 文件的内容为 `xn--wnyq9e038a.cn`（中文域名的 punycode 形式），由 GitHub Pages 用于绑定自定义域名，**请勿删除**。DNS 已解析生效，HTTP 与 HTTPS 均可访问。
+
+搜索引擎验证与收录：
+
+- `BingSiteAuth.xml` 位于站点根目录，供 Bing Webmaster Tools 验证站点所有权，通过 `https://xn--wnyq9e038a.cn/BingSiteAuth.xml` 公开访问，**请勿删除或改名**
+- 网站地图：`https://xn--wnyq9e038a.cn/sitemap.xml`，`robots.txt` 中已通过 `Sitemap:` 指令声明；由 `tools/build.py` 自动生成，新增页面需同步加入 `build_misc()` 的 `paths`
 
 分支约定：
 
