@@ -60,32 +60,30 @@ python tools/build.py
 - 改页面文案与结构：编辑对应的 `build_xxx()` 函数
 - 生成后请重新检查 `sitemap.xml` 的 `TODAY` 日期
 
-## 部署到 GitHub Pages
+## 部署与访问
 
-仓库已推送到 `mfujun2025/diancifa`，并通过 `gh-pages` 分支自动启用 Pages，当前在线地址：
+仓库 `mfujun2025/diancifa` 已通过 `gh-pages` 分支启用 GitHub Pages，并绑定中文域名：
 
-**https://mfujun2025.github.io/diancifa/**
+- **主站（已生效）：https://xn--wnyq9e038a.cn/**（浏览器地址栏显示为「电磁阀.cn」）
+- 项目预览地址：`https://mfujun2025.github.io/diancifa/`，会跳转到主域名
+
+仓库根目录 `CNAME` 文件的内容为 `xn--wnyq9e038a.cn`（中文域名的 punycode 形式），由 GitHub Pages 用于绑定自定义域名，**请勿删除**。DNS 已解析生效，HTTP 与 HTTPS 均可访问。
 
 分支约定：
 
 - `main`：主分支，日常内容修改提交到这里
-- `gh-pages`：GitHub Pages 发布源，与 `main` 保持同步即可更新线上页面
+- `gh-pages`：GitHub Pages 发布源，内容与 `main` 保持一致
 
-同步命令（在 `main` 提交推送后执行）：
+更新线上内容（`main` 提交推送后执行）：
 
 ```bash
-git checkout gh-pages && git merge main --ff-only && git push origin gh-pages && git checkout main
+git push origin main
+git push --force-with-lease origin main:gh-pages
 ```
 
-也可以在仓库 Settings → Pages 把发布源改回 `main` / `/(root)`，之后只需维护一个分支。
+如果不想维护两个分支，可在仓库 Settings → Pages 把发布源改为 `main` / `/(root)`，之后只推送 `main` 即可。
 
-**绑定中文域名**（确认 DNS 已指向 GitHub Pages 后再做）：在仓库根目录新建 `CNAME` 文件，内容为 punycode 形式：
-
-```
-xn--wnyq9e038a.cn
-```
-
-> 注意：DNS 未生效前不要添加 `CNAME`，否则 GitHub Pages 会把 `github.io` 地址重定向到未解析的域名，导致预览地址也无法访问。境内服务器还需按法规完成 ICP 备案；使用 GitHub Pages 时请自行评估合规要求。
+> 提示：DNS 未生效前不要添加 `CNAME`，否则 GitHub Pages 会把 `github.io` 地址重定向到未解析的域名，导致预览地址也无法访问。境内服务器还需按法规完成 ICP 备案；使用 GitHub Pages 时请自行评估合规要求。
 
 ## 询价表单工作方式
 
