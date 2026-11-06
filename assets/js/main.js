@@ -164,4 +164,26 @@
     if (base.indexOf('?') === -1) a.setAttribute('href', base + '?model=' + encodeURIComponent(model));
   });
 
+  /* ---------- 技术长文：当前章节目录高亮 ---------- */
+  var tocLinks = $$('.article-toc li a');
+  if (tocLinks.length) {
+    var sections = tocLinks.map(function (a) {
+      return document.getElementById((a.getAttribute('href') || '').slice(1));
+    });
+    var ticking = false;
+    function updateToc() {
+      ticking = false;
+      var active = tocLinks[0];
+      sections.forEach(function (el, i) {
+        if (el && el.getBoundingClientRect().top <= 150) active = tocLinks[i];
+      });
+      tocLinks.forEach(function (a) { a.classList.toggle('is-current', a === active); });
+    }
+    window.addEventListener('scroll', function () {
+      if (!ticking) { ticking = true; requestAnimationFrame(updateToc); }
+    }, { passive: true });
+    window.addEventListener('resize', updateToc, { passive: true });
+    updateToc();
+  }
+
 })();

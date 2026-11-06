@@ -3,12 +3,18 @@
 电磁阀.cn 官网静态页面生成脚本
 
 用法：在项目根目录执行  python tools/build.py
-产物：根目录 HTML、products/ 详情页、sitemap.xml、robots.txt
-所有页面模板与数据集中在本文件，改内容后重新运行即可全站更新。
+产物：根目录 HTML、products/ 详情页、guides/ 技术文章页、sitemap.xml、robots.txt
+页面模板与数据集中在本文件，长文正文在 content/*.md（Markdown）。
+改内容后重新运行即可全站更新，勿直接编辑生成的 HTML。
 """
 from pathlib import Path
 from urllib.parse import quote
+from html import escape as html_escape
 import json
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from mdrender import render_markdown
 
 ROOT = Path(__file__).resolve().parent.parent
 EMAIL = "548827878@qq.com"
@@ -16,6 +22,16 @@ QQ = "548827878"
 BRAND = "电磁阀.cn"
 SITE = "https://xn--wnyq9e038a.cn"  # 电磁阀.cn 的 punycode 形式
 TODAY = "2026-11-06"
+
+# 技术指南栏目：Markdown 源文件 → 栏目页 + 长文详情页
+GUIDE_SLUG = "solenoid-valve-guide"
+GUIDE_MD = "content/" + GUIDE_SLUG + ".md"
+GUIDE_PATH = "guides/" + GUIDE_SLUG + ".html"
+GUIDE_DESC = (
+    "约 1.1 万字电磁阀系统长文：讲清电磁阀工作原理、直动式与先导式结构差异、类型与关键参数、"
+    "典型应用场景、电磁阀选型流程、安装维护要点与电磁阀故障排查思路，并附常见问题解答，"
+    "面向工业自动化、设备维护与采购读者。"
+)
 
 CATEGORIES = [
     ("all", "全部产品"),
@@ -315,6 +331,7 @@ def header(active, B):
     items = [
         ("index.html", "首页", "home"),
         ("products.html", "产品中心", "products"),
+        ("guides.html", "技术指南", "guides"),
         ("about.html", "关于我们", "about"),
         ("contact.html", "联系我们", "contact"),
         ("domains.html", "域名出售", "domains"),
@@ -380,6 +397,7 @@ def footer(B):
         <ul>
           <li><a href="{B}index.html">首页</a></li>
           <li><a href="{B}products.html">产品中心</a></li>
+          <li><a href="{B}guides.html">技术指南</a></li>
           <li><a href="{B}about.html">关于我们</a></li>
           <li><a href="{B}contact.html">联系我们</a></li>
           <li><a href="{B}domains.html">域名出售</a></li>
@@ -418,8 +436,10 @@ def faq(items):
     ) + '</div>'
 
 
-def page(title, desc, body, B, active, path, show_cta=True, jsonld=""):
+def page(title, desc, body, B, active, path, show_cta=True, jsonld="",
+         og_type="website", keywords=None):
     canonical = SITE + "/" + path if path else SITE + "/"
+    kw = keywords or "电磁阀,电磁阀选型,电磁阀报价,气动电磁阀,水用电磁阀," + BRAND
     main_body = body + (cta_band(B) if show_cta else "")
     return f'''<!DOCTYPE html>
 <html lang="zh-CN">
@@ -428,9 +448,9 @@ def page(title, desc, body, B, active, path, show_cta=True, jsonld=""):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{title}</title>
 <meta name="description" content="{desc}">
-<meta name="keywords" content="电磁阀,电磁阀选型,电磁阀报价,气动电磁阀,水用电磁阀,{BRAND}">
+<meta name="keywords" content="{kw}">
 <link rel="canonical" href="{canonical}">
-<meta property="og:type" content="website">
+<meta property="og:type" content="{og_type}">
 <meta property="og:title" content="{title}">
 <meta property="og:description" content="{desc}">
 <meta property="og:url" content="{canonical}">
@@ -564,6 +584,19 @@ def build_index():
   </div>
 </section>'''
 
+    guide_teaser = '''<section class="section section--soft" style="padding:38px 0">
+  <div class="container">
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
+      <div>
+        <p style="font-size:13px;color:var(--accent);font-weight:700;letter-spacing:.06em;margin:0 0 6px">技术指南 · 约 1.1 万字系统长文</p>
+        <h3 style="margin-bottom:6px">电磁阀完全指南：工作原理、类型划分、选型要点与故障排查</h3>
+        <p>系统梳理定义与原理、类型划分、关键参数、应用场景、选型流程、安装维护、故障排查与常见误区，附参数核对清单和常见问题。<a href="guides/solenoid-valve-guide.html">阅读全文 →</a></p>
+      </div>
+      <a class="btn btn-outline" href="guides.html">进入技术指南</a>
+    </div>
+  </div>
+</section>'''
+
     domain_teaser = '''<section class="section section--soft">
   <div class="container">
     <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
@@ -586,7 +619,7 @@ def build_index():
   </div>
 </section>'''
 
-    body = hero + trust + cats + hot + apps + steps + domain_teaser + faq_sec + cta_band(
+    body = hero + trust + cats + hot + apps + guide_teaser + steps + domain_teaser + faq_sec + cta_band(
         B, "把需求发过来，报价与选型一次对接", "咨询邮箱 " + EMAIL + " · QQ " + QQ + " · 也可直接填写在线询价单")
     write("index.html", page(
         BRAND + " - 电磁阀选型、产品展示与询价订购",
@@ -1073,6 +1106,173 @@ def build_domains():
 
 
 # =========================================================
+# 技术指南栏目 / 长文详情页
+# =========================================================
+def _guide(base):
+    """读取 Markdown 源文并渲染一次；栏目页与详情页复用解析结果。"""
+    return render_markdown((ROOT / GUIDE_MD).read_text(encoding="utf-8"), base=base)
+
+
+def build_guides():
+    B = ""
+    g = _guide(B)
+    words = "约 %.1f 万字" % (g["cjk"] / 10000)
+    minutes = max(1, round(g["cjk"] / 450))
+    title_text = html_escape(g["title"])
+    topics = "".join(
+        '<a class="topic-chip" href="' + GUIDE_PATH + "#" + sid + '">' + html_escape(label) + "</a>"
+        for sid, label in g["toc"] if label not in ("常见问题", "结语")
+    )
+
+    hero = '''<section class="guide-hero">
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">首页</a><span>/</span>技术指南</div>
+    <span class="eyebrow">TECHNICAL GUIDE</span>
+    <h1>技术指南</h1>
+    <p class="guide-hero__lead">围绕电磁阀工作原理、类型划分、关键参数、选型流程与故障排查，整理可长期查阅的中文技术资料，面向工业自动化、设备维护与采购读者。</p>
+  </div>
+</section>'''
+
+    listing = f'''<section class="section">
+  <div class="container">
+    <div class="section-head"><span class="eyebrow">LATEST ARTICLES</span><h2>全部文章</h2><p>按主题成体系展开，附参数核对清单与常见问题。</p></div>
+    <div class="guide-list">
+      <article class="guide-card">
+        <div class="guide-card__main">
+          <span class="guide-card__tag">选型与维护 · 系统长文</span>
+          <h2><a href="{GUIDE_PATH}">{title_text}</a></h2>
+          <p>{GUIDE_DESC}</p>
+          <div class="guide-card__meta"><span>更新：{TODAY}</span><span>{words}</span><span>预计阅读 {minutes} 分钟</span><span>{len(g["toc"])} 个章节 · {len(g["faq"])} 条常见问题</span></div>
+        </div>
+        <div class="guide-card__side">
+          <a class="btn btn-primary" href="{GUIDE_PATH}">阅读全文 →</a>
+          <a class="btn btn-outline" href="inquiry.html">按工况询价</a>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>'''
+
+    quick = f'''<section class="section section--soft">
+  <div class="container">
+    <div class="section-head"><span class="eyebrow">BROWSE BY TOPIC</span><h2>按主题快速跳转</h2><p>直接从目录进入长文对应章节，便于查阅与分享。</p></div>
+    <div class="topic-list">{topics}</div>
+  </div>
+</section>'''
+
+    help_block = f'''<section class="section">
+  <div class="container">
+    <div class="card">
+      <h3>需要针对具体工况核对参数？</h3>
+      <p>把介质、压力、温度、电压、接口与数量整理好，可通过 <a href="inquiry.html">在线询价 / 订购</a> 提交，或发邮件到 <a href="mailto:{EMAIL}">{EMAIL}</a>；也可先到 <a href="products.html">产品中心</a> 对照常见型号的典型参数。</p>
+    </div>
+  </div>
+</section>'''
+
+    ld = json.dumps({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "技术指南 - " + BRAND,
+        "description": "电磁阀工作原理、类型划分、关键参数、选型流程、安装维护与故障排查的中文技术文章合集。",
+        "url": SITE + "/guides.html",
+        "inLanguage": "zh-CN",
+        "mainEntity": {"@type": "ItemList", "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": g["title"], "url": SITE + "/" + GUIDE_PATH}
+        ]},
+    }, ensure_ascii=False)
+    body = hero + listing + quick + help_block
+    write("guides.html", page(
+        "技术指南 - 电磁阀工作原理、选型与故障排查文章 | " + BRAND,
+        "电磁阀.cn 技术指南栏目：系统整理电磁阀工作原理、类型划分、关键参数、电磁阀选型流程与电磁阀故障排查方法的中文长文。",
+        body, B, "guides", "guides.html",
+        keywords="电磁阀,电磁阀工作原理,电磁阀选型,电磁阀故障,电磁阀技术指南," + BRAND,
+        jsonld='<script type="application/ld+json">' + ld + '</script>'))
+
+
+def build_guide_article():
+    B = "../"
+    g = _guide(B)
+    words = "约 %.1f 万字" % (g["cjk"] / 10000)
+    minutes = max(1, round(g["cjk"] / 450))
+    title_text = html_escape(g["title"])
+    toc = "".join(
+        '<li><a href="#' + sid + '">' + html_escape(label) + "</a></li>" for sid, label in g["toc"]
+    )
+    article_html = g["html"]
+    related_cards = "".join(product_card(PRODUCTS[i], B, B + "products/") for i in (0, 1, 4))
+
+    hero = f'''<section class="article-hero" id="top">
+  <div class="container">
+    <div class="breadcrumb"><a href="{B}index.html">首页</a><span>/</span><a href="{B}guides.html">技术指南</a><span>/</span>电磁阀完全指南</div>
+    <span class="article-tag">技术指南 · 选型与维护</span>
+    <h1>{title_text}</h1>
+    <p class="article-deck">从电磁阀工作原理到电磁阀选型与电磁阀故障排查，按十个章节系统梳理现场最常遇到的判断依据与处理顺序，附参数核对清单和常见问题。</p>
+    <div class="article-meta"><span>更新：{TODAY}</span><span>{words}</span><span>预计阅读 {minutes} 分钟</span><span>面向：工业自动化 / 设备维护 / 采购</span></div>
+  </div>
+</section>'''
+
+    article = f'''<section class="section article-section">
+  <div class="container article-layout">
+    <aside class="article-toc" aria-label="本文目录">
+      <div class="toc-inner">
+        <p class="toc-title">本文目录</p>
+        <ol>{toc}</ol>
+        <a class="toc-top" href="#top">↑ 回到顶部</a>
+      </div>
+    </aside>
+    <article class="article-body">
+      {article_html}
+      <div class="article-footnote">本文整理的是通用工程判断方法，不替代具体产品的说明书、图纸与现场安全规范；参数边界以制造商资料与双方确认的订货信息为准。</div>
+    </article>
+  </div>
+</section>'''
+
+    related = f'''<section class="section section--soft">
+  <div class="container">
+    <div class="section-head"><span class="eyebrow">RELATED PRODUCTS</span><h2>相关产品与延伸阅读</h2><p>对照具体型号的参数，或直接提交工况信息获取选型建议。</p></div>
+    <div class="product-grid">{related_cards}</div>
+    <div class="related-links">
+      <a href="{B}guides.html">← 返回技术指南</a>
+      <a href="{B}products.html">浏览全部产品</a>
+      <a href="{B}inquiry.html">在线询价 / 订购</a>
+      <a href="{B}contact.html">联系我们</a>
+    </div>
+  </div>
+</section>'''
+
+    faq_entities = [
+        {"@type": "Question", "name": item["q"],
+         "acceptedAnswer": {"@type": "Answer", "text": item["a"]}}
+        for item in g["faq"]
+    ]
+    ld = json.dumps({
+        "@context": "https://schema.org",
+        "@graph": [
+            {"@type": "BreadcrumbList", "itemListElement": [
+                {"@type": "ListItem", "position": 1, "name": "首页", "item": SITE + "/"},
+                {"@type": "ListItem", "position": 2, "name": "技术指南", "item": SITE + "/guides.html"},
+                {"@type": "ListItem", "position": 3, "name": g["title"], "item": SITE + "/" + GUIDE_PATH},
+            ]},
+            {"@type": "Article", "headline": g["title"], "description": GUIDE_DESC,
+             "inLanguage": "zh-CN", "wordCount": g["cjk"],
+             "datePublished": TODAY, "dateModified": TODAY,
+             "author": {"@type": "Organization", "name": BRAND, "url": SITE + "/"},
+             "publisher": {"@type": "Organization", "name": BRAND, "url": SITE + "/"},
+             "mainEntityOfPage": {"@type": "WebPage", "@id": SITE + "/" + GUIDE_PATH},
+             "keywords": "电磁阀,电磁阀工作原理,电磁阀选型,电磁阀故障"},
+            {"@type": "FAQPage", "mainEntity": faq_entities},
+        ],
+    }, ensure_ascii=False)
+    body = hero + article + related
+    write(GUIDE_PATH, page(
+        g["title"] + " | " + BRAND,
+        GUIDE_DESC,
+        body, B, "guides", GUIDE_PATH, og_type="article",
+        keywords="电磁阀,电磁阀工作原理,电磁阀选型,电磁阀故障,电磁阀类型,电磁阀参数," + BRAND,
+        jsonld='<script type="application/ld+json">' + ld + '</script>'))
+
+
+# =========================================================
 # 404 / sitemap / robots
 # =========================================================
 def build_misc():
@@ -1085,18 +1285,19 @@ def build_misc():
     <div class="btn-row" style="justify-content:center">
       <a class="btn btn-primary" href="index.html">返回首页</a>
       <a class="btn btn-outline" href="products.html">产品中心</a>
+      <a class="btn btn-outline" href="guides.html">技术指南</a>
       <a class="btn btn-outline" href="domains.html">域名出售</a>
     </div>
   </div>
 </section>'''
     write("404.html", page("页面未找到 - " + BRAND, "页面未找到，请返回首页或产品中心继续浏览。", body, B, "", "404.html", show_cta=False))
 
-    paths = ["", "products.html", "about.html", "contact.html", "inquiry.html", "domains.html"] + [
+    paths = ["", "products.html", "guides.html", GUIDE_PATH, "about.html", "contact.html", "inquiry.html", "domains.html"] + [
         "products/" + p["slug"] + ".html" for p in PRODUCTS
     ]
     urls = "".join(
         '  <url><loc>' + SITE + '/' + p + '</loc><lastmod>' + TODAY + '</lastmod><changefreq>weekly</changefreq><priority>' +
-        ('1.0' if p == "" else '0.8' if p in ("products.html", "domains.html") else '0.6') + '</priority></url>\n'
+        ('1.0' if p == "" else '0.8' if p in ("products.html", "domains.html", "guides.html", GUIDE_PATH) else '0.6') + '</priority></url>\n'
         for p in paths
     )
     write("sitemap.xml", '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + urls + '</urlset>\n')
@@ -1115,8 +1316,10 @@ def main():
     build_contact()
     build_inquiry()
     build_domains()
+    build_guides()
+    build_guide_article()
     build_misc()
-    print("完成。共生成", 6 + len(PRODUCTS) + 4, "个 HTML/附属文件。")
+    print("完成。共生成", 8 + len(PRODUCTS) + 4, "个 HTML/附属文件。")
 
 
 if __name__ == "__main__":
