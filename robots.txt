@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://xn--wnyq9e038a.cn/sitemap.xml
