@@ -62,9 +62,22 @@ python tools/build.py
 
 ## 部署到 GitHub Pages
 
-1. 推送本仓库到 `mfujun2025/diancifa`（默认分支 `main`）
-2. 仓库 Settings → Pages → Source 选择 `Deploy from a branch` → `main` / `/(root)`
-3. 部署后默认访问地址：`https://mfujun2025.github.io/diancifa/`
+仓库已推送到 `mfujun2025/diancifa`，并通过 `gh-pages` 分支自动启用 Pages，当前在线地址：
+
+**https://mfujun2025.github.io/diancifa/**
+
+分支约定：
+
+- `main`：主分支，日常内容修改提交到这里
+- `gh-pages`：GitHub Pages 发布源，与 `main` 保持同步即可更新线上页面
+
+同步命令（在 `main` 提交推送后执行）：
+
+```bash
+git checkout gh-pages && git merge main --ff-only && git push origin gh-pages && git checkout main
+```
+
+也可以在仓库 Settings → Pages 把发布源改回 `main` / `/(root)`，之后只需维护一个分支。
 
 **绑定中文域名**（确认 DNS 已指向 GitHub Pages 后再做）：在仓库根目录新建 `CNAME` 文件，内容为 punycode 形式：
 
